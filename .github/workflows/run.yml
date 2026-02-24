@@ -1,0 +1,27 @@
+name: Marche Inventory Monitor
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # 10分おきに実行（世界標準時）
+  workflow_dispatch:        # 手動で今すぐ実行するためのボタン
+
+jobs:
+  check-stock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: リポジトリのコードを読み込む
+        uses: actions/checkout@v4
+
+      - name: Pythonをセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 必要なライブラリをインストール
+        run: pip install requests
+
+      - name: 監視スクリプトを実行
+        env:
+          LINE_ACCESS_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
+        run: python monitor.py

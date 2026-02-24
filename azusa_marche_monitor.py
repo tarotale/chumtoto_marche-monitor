@@ -23,7 +23,6 @@ def send_line(text):
         print(f"LINE送信エラー: {e}")
 
 def check_marche():
-    # 前回データの読み込み
     last_data = {}
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r") as f:
@@ -36,44 +35,42 @@ def check_marche():
     try:
         response = requests.get(TARGET_URL, headers=headers, timeout=15)
         html = response.text
+        
+        # HTMLから情報を抜き出す
         titles = re.findall(r'class="product-card__title">([^<]+)</div>', html)
-        stocks = re.findall(r'残り\s*(\d+)\s*枚', html)
+        # 「残り 3 枚 / 全 10 枚」のような構造から両方の数字を取る
+        stocks_current = re.findall(r'残り\s*(\d+)\s*枚', html)
+        stocks_total = re.findall(r'全\s*(\d+)\s*枚', html)
 
         current_data = {}
-        # --- ここからテスト用追加 ---
-        titles = ["テスト出品アイテム"]
-        stocks = ["5"]
-        # --- ここまでテスト用追加 ---
         for i in range(len(titles)):
             title = titles[i].strip()
-            count = int(stocks[i])
+            count = int(stocks_current[i])
+            # 全数がうまく取れない場合は「?」にする
+            total = stocks_total[i] if i < len(stocks_total) else "?"
+            
             current_data[title] = count
+            last_count = last_data.get(title, -1)
 
-            last_count = last_data.get(title, -1) # 初めて見る商品は-1
-
-            # --- 通知判定 ---
             should_notify = False
             reason = ""
 
             if last_count == -1:
-                # 新しく出品された！
                 should_notify = True
                 reason = "✨ 新着出品！"
             elif count <= 3 and last_count > 3:
-                # 3枚以下になった瞬間！
                 should_notify = True
                 reason = "⚠️ 残りわずか！"
             elif count > last_count and last_count != -1:
-                # 在庫が補充された！
                 should_notify = True
                 reason = "🔄 在庫復活！"
 
             if should_notify:
-                msg = f"\n【{reason}】宮原梓\n{title}\n残り {count} 枚\n{TARGET_URL}"
+                # メッセージに全数を追加
+                msg = f"\n【{reason}】宮原梓\n{title}\n在庫：残り {count} / 全 {total} 枚\n{TARGET_URL}"
                 send_line(msg)
-                print(f"通知送信: {title}")
+                print(f"通知送信: {title} ({count}/{total})")
 
-        # 今回の状態を保存
         with open(DB_FILE, "w") as f:
             json.dump(current_data, f)
 

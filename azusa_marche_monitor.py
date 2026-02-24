@@ -34,6 +34,7 @@ def check_marche():
     
     try:
         response = requests.get(API_URL, headers=headers)
+        print(f"Status Code: {response.status_code}")
         response.raise_for_status()
         products = response.json()
         

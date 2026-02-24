@@ -1,22 +1,20 @@
 import requests
 import os
+import re
 
 # --- 設定：GitHubのSecretから読み込む ---
 CHANNEL_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 USER_ID = os.getenv('LINE_USER_ID')
-API_URL = "https://marche-yell.com/api/v1/creators/dst_miyaharaazu/products"
+# APIではなく、通常のショップページを見に行きます
+TARGET_URL = "https://marche-yell.com/dst_miyaharaazu"
 
 def send_line(text):
-    """LINE Messaging APIでプッシュ通知を送る"""
     url = "https://api.line.me/v2/bot/message/push"
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}"
     }
-    payload = {
-        "to": USER_ID,
-        "messages": [{"type": "text", "text": text}]
-    }
+    payload = {"to": USER_ID, "messages": [{"type": "text", "text": text}]}
     try:
         res = requests.post(url, headers=headers, json=payload)
         res.raise_for_status()
@@ -24,33 +22,34 @@ def send_line(text):
         print(f"LINE送信エラー: {e}")
 
 def check_marche():
-    """マルシェの在庫をチェックする"""
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "application/json",
-        "Referer": "https://marche-yell.com/dst_miyaharaazu",
-        "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     }
     
     try:
-        response = requests.get(API_URL, headers=headers)
+        response = requests.get(TARGET_URL, headers=headers)
         print(f"Status Code: {response.status_code}")
-        response.raise_for_status()
-        products = response.json()
         
-        for p in products:
-            title = p.get('title', '新着商品')
-            sold = p.get('sold_quantity', 0)
-            limit = p.get('limit_quantity', 0)
-            remaining = limit - sold
-            p_id = p.get('id')
-            p_url = f"https://marche-yell.com/dst_miyaharaazu/products/{p_id}"
+        # HTMLの中から在庫情報を探す（簡易的な解析）
+        html_content = response.text
+        
+        # 商品名と残り枚数を探す（サイトの構造に合わせた抽出）
+        # ※正規表現で「残り◯枚」という部分を抜き出します
+        items = re.findall(r'class="product-card__title">(.*?)<.*?残り\s*(\d+)\s*枚', html_content, re.S)
+        
+        if not items:
+            print("商品データが見つかりませんでした。ページ構造が変わった可能性があります。")
+            # デバッグ用にHTMLの一部を表示
+            print(html_content[:500])
+            return
 
-            # 今回はシンプルに「在庫が3枚以下」になったら通知する設定です
-            # ※もっと細かく（1枚売れるたび等）したい場合は、
-            # データの保存が必要になるのでまずはここから！
-            if True:  # テスト送信用：常に通知する
-                msg = f"\n【在庫わずか！】宮原梓\n{title}\n残り {remaining} / {limit} 枚\n{p_url}"
+        for title, remaining in items:
+            remaining = int(remaining)
+            title = title.strip()
+            
+            # テスト用に一旦「True」にしています。成功したら条件を戻してください。
+            if True: 
+                msg = f"\n【在庫チェック】宮原梓\n{title}\n残り {remaining} 枚\n{TARGET_URL}"
                 send_line(msg)
                 print(f"通知送信: {title}")
 

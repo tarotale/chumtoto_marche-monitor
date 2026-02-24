@@ -34,7 +34,16 @@ def check_marche():
 
         all_products = response.json()
         my_products = [p for p in all_products if p.get('creator_id') == TARGET_CREATOR_ID]
-
+# --- ここからテスト用に追加 ---
+        # 商品が空っぽの場合、テスト用のデータを1つ入れる
+        if not my_products:
+            my_products = [{
+                'title': 'テスト送信（接続確認OK）',
+                'limit_quantity': 10,
+                'sold_quantity': 9,
+                'id': 'test'
+            }]
+        # --- ここまでテスト用 ---
         for p in my_products:
             title = p.get('title', '新着商品')
             limit = p.get('limit_quantity', 0)

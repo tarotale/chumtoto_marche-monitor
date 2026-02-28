@@ -19,108 +19,58 @@ TARGET_CREATORS = [
 
 def send_line(text):
     url = "https://api.line.me/v2/bot/message/push"
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}"
-    }
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}"}
     payload = {"to": USER_ID, "messages": [{"type": "text", "text": text}]}
+    requests.post(url, headers=headers, json=payload)
+
+def get_product_detail(cid, p_id):
+    """特定の商品ページを見に行って在庫数を正確に取る"""
+    url = f"https://marche-yell.com/{cid}/products/{p_id}"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"}
     try:
-        res = requests.post(url, headers=headers, json=payload)
-        res.raise_for_status()
-    except Exception as e:
-        print(f"LINE送信エラー: {e}")
+        res = requests.get(url, headers=headers, timeout=10)
+        json_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', res.text)
+        if json_match:
+            data = json.loads(json_match.group(1))
+            p = data.get('props', {}).get('pageProps', {}).get('product', {})
+            if p:
+                limit = p.get('limit_quantity', 0)
+                sold = p.get('sold_quantity', 0)
+                return p.get('title'), limit - sold, limit
+    except:
+        pass
+    return None, 0, 0
 
 def check_marche():
     last_data = {}
     if os.path.exists(DB_FILE):
-        try:
-            with open(DB_FILE, "r") as f:
-                last_data = json.load(f)
-        except:
-            last_data = {}
+        with open(DB_FILE, "r") as f: last_data = json.load(f)
 
-    # ヘッダーをPCブラウザになりすまし
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
-    }
-
+    headers = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"}
     current_all_data = {}
 
     for creator in TARGET_CREATORS:
-        name = creator["name"]
         cid = creator["id"]
-        target_url = f"https://marche-yell.com/{cid}"
+        print(f"チェック中: {creator['name']}...")
         
-        print(f"チェック中: {name} ({cid})...")
+        # 1. 一覧ページから「商品ID」の羅列だけを抜き出す（ここはブロックされにくい）
+        res = requests.get(f"https://marche-yell.com/{cid}", headers=headers)
+        # ID（数字6桁前後）をすべて見つける
+        found_ids = list(set(re.findall(r'/products/(\d+)', res.text)))
         
-        try:
-            response = requests.get(target_url, headers=headers, timeout=15)
-            if response.status_code != 200:
-                print(f"  -> スキップ: アクセス拒否 ({response.status_code})")
-                continue
+        current_all_data[cid] = found_ids
+        old_ids = last_data.get(cid, [])
 
-            # HTMLからJSONを抽出
-            json_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', response.text)
-            if not json_match:
-                print(f"  -> JSONが見つかりませんでした")
-                continue
-
-            data = json.loads(json_match.group(1))
-            
-            # --- ここが重要：あらゆる階層を掘って商品データを探し出す ---
-            props = data.get('props', {})
-            page_props = props.get('pageProps', {})
-            
-            # マルシェの複数の新旧パターンに対応
-            products = page_props.get('products') or \
-                       page_props.get('initialState', {}).get('products') or \
-                       page_props.get('initialProps', {}).get('products') or \
-                       []
-
-            current_all_data[cid] = {}
-
-            if not products:
-                print(f"  -> 商品が見つかりませんでした（0件）")
-                continue
-
-            print(f"  -> {len(products)}件の商品を検出しました")
-
-            for p in products:
-                title = p.get('title', '商品')
-                limit = p.get('limit_quantity', 0)
-                sold = p.get('sold_quantity', 0)
-                remaining = limit - sold
-                p_id = p.get('id')
-                p_url = f"https://marche-yell.com/{cid}/products/{p_id}"
-                
-                current_all_data[cid][title] = remaining
-                last_count = last_data.get(cid, {}).get(title, -1)
-
-                should_notify = False
-                reason = ""
-
-                if last_count == -1:
-                    should_notify = True
-                    reason = "✨ 新着出品！"
-                elif remaining > 0 and last_count <= 0:
-                    should_notify = True
-                    reason = "🔄 在庫復活！"
-                elif remaining <= 3 and last_count > 3:
-                    should_notify = True
-                    reason = "⚠️ 残りわずか！"
-
-                if should_notify and remaining > 0:
-                    msg = f"\n【{reason}】{name}\n{title}\n在庫：残り {remaining} / 全 {limit} 枚\n{p_url}"
+        # 2. 前回いなかった「新しいID」があれば、詳細ページへ中身を見に行く
+        for p_id in found_ids:
+            if p_id not in old_ids:
+                title, remaining, limit = get_product_detail(cid, p_id)
+                if title and remaining > 0:
+                    msg = f"\n✨【新着】{creator['name']}\n{title}\n在庫：残り {remaining} / 全 {limit} 枚\nhttps://marche-yell.com/{cid}/products/{p_id}"
                     send_line(msg)
-                    print(f"  -> 通知送信: {title}")
+                    print(f"  -> 新商品を検知: {title}")
 
-        except Exception as e:
-            print(f"  -> {name}のチェック中にエラー: {e}")
-
-    with open(DB_FILE, "w") as f:
-        json.dump(current_all_data, f)
+    with open(DB_FILE, "w") as f: json.dump(current_all_data, f)
 
 if __name__ == "__main__":
     check_marche()

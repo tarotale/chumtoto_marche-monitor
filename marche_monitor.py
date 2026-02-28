@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import re
 
 # --- 設定 ---
 CHANNEL_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
@@ -38,14 +39,11 @@ def check_marche():
         except:
             last_data = {}
 
-    # マルシェのフロントエンドが実際に使用しているヘッダーセット
+    # ヘッダーをPCブラウザになりすまし
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/plain, */*",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
-        "Origin": "https://marche-yell.com",
-        "Referer": "https://marche-yell.com/",
-        "X-Requested-With": "XMLHttpRequest"
     }
 
     current_all_data = {}
@@ -53,25 +51,33 @@ def check_marche():
     for creator in TARGET_CREATORS:
         name = creator["name"]
         cid = creator["id"]
-        
-        # 修正ポイント: 実際のブラウザ通信に基づいた正確なエンドポイントに変更
-        api_url = f"https://marche-yell.com/api/creators/{cid}/products?limit=24&offset=0"
+        target_url = f"https://marche-yell.com/{cid}"
         
         print(f"チェック中: {name} ({cid})...")
         
         try:
-            response = requests.get(api_url, headers=headers, timeout=15)
-            
-            # 403/404エラーが出た場合のログを強化
+            response = requests.get(target_url, headers=headers, timeout=15)
             if response.status_code != 200:
                 print(f"  -> スキップ: アクセス拒否 ({response.status_code})")
                 continue
 
-            data = response.json()
+            # HTMLからJSONを抽出
+            json_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', response.text)
+            if not json_match:
+                print(f"  -> JSONが見つかりませんでした")
+                continue
+
+            data = json.loads(json_match.group(1))
             
-            # APIのレスポンス形式に合わせて取得
-            # products または data 配下にあるケース両方に対応
-            products = data.get('products') or data.get('data', {}).get('products', [])
+            # --- ここが重要：あらゆる階層を掘って商品データを探し出す ---
+            props = data.get('props', {})
+            page_props = props.get('pageProps', {})
+            
+            # マルシェの複数の新旧パターンに対応
+            products = page_props.get('products') or \
+                       page_props.get('initialState', {}).get('products') or \
+                       page_props.get('initialProps', {}).get('products') or \
+                       []
 
             current_all_data[cid] = {}
 
@@ -98,7 +104,7 @@ def check_marche():
                 if last_count == -1:
                     should_notify = True
                     reason = "✨ 新着出品！"
-                elif remaining > 0 and (last_count <= 0):
+                elif remaining > 0 and last_count <= 0:
                     should_notify = True
                     reason = "🔄 在庫復活！"
                 elif remaining <= 3 and last_count > 3:

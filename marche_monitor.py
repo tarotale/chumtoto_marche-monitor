@@ -1,14 +1,12 @@
 import requests
 import os
 import json
-import re
 
 # --- 設定 ---
 CHANNEL_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 USER_ID = os.getenv('LINE_USER_ID')
 DB_FILE = "last_stock.json"
 
-# 監視したいクリエイターのリスト（URLの末尾のIDをここに追加してください）
 TARGET_CREATORS = [
     {"name": "宮原梓", "id": "dst_miyaharaazu"},
     {"name": "江本夏渚", "id": "dst_emotonana"},
@@ -32,7 +30,6 @@ def send_line(text):
         print(f"LINE送信エラー: {e}")
 
 def check_marche():
-    # 前回データの読み込み
     last_data = {}
     if os.path.exists(DB_FILE):
         try:
@@ -41,48 +38,41 @@ def check_marche():
         except:
             last_data = {}
 
-    # 最新のiPhoneのUser-Agentに更新してブロックを回避
     headers = {
         "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1",
+        "Accept": "application/json", # JSONを要求
+        "Referer": "https://marche-yell.com/",
     }
 
     current_all_data = {}
 
-    # 登録されたクリエイターを一人ずつループで回す
     for creator in TARGET_CREATORS:
         name = creator["name"]
         cid = creator["id"]
-        target_url = f"https://marche-yell.com/{cid}"
+        
+        # 修正ポイント: HTMLではなく、APIから直接データを取得するURLに変更
+        # これにより、JavaScriptの実行なしで最新データが拾えます
+        api_url = f"https://marche-yell.com/api/v1/creators/{cid}/products?limit=20&offset=0"
         
         print(f"チェック中: {name} ({cid})...")
         
         try:
-            response = requests.get(target_url, headers=headers, timeout=15)
+            response = requests.get(api_url, headers=headers, timeout=15)
             if response.status_code != 200:
                 print(f"  -> スキップ: アクセス拒否 ({response.status_code})")
                 continue
 
-            # HTML内のJSONデータを抽出
-            json_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', response.text)
-            if not json_match:
-                print(f"  -> データ構造が見つかりません")
-                continue
+            # APIの結果はそのままJSONとして読み込める
+            data = response.json()
+            products = data.get('products', [])
 
-            data = json.loads(json_match.group(1))
-            
-            # --- 修正ポイント: 階層が変わっても取得できるように柔軟に探す ---
-            page_props = data.get('props', {}).get('pageProps', {})
-            
-            # 1. pageProps直下 2. initialState内 3. fallbackで空リスト
-            products = page_props.get('products') or \
-                       page_props.get('initialState', {}).get('products', [])
-            # --------------------------------------------------------
-
-            # このクリエイター用の保存データ
             current_all_data[cid] = {}
 
             if not products:
                 print(f"  -> 商品が見つかりませんでした（0件）")
+                continue
+
+            print(f"  -> {len(products)}件の商品を検出しました")
 
             for p in products:
                 title = p.get('title', '商品')
@@ -93,8 +83,6 @@ def check_marche():
                 p_url = f"https://marche-yell.com/{cid}/products/{p_id}"
                 
                 current_all_data[cid][title] = remaining
-                
-                # 前回データの取得（クリエイターID > 商品名の階層で探す）
                 last_count = last_data.get(cid, {}).get(title, -1)
 
                 should_notify = False
@@ -103,8 +91,7 @@ def check_marche():
                 if last_count == -1:
                     should_notify = True
                     reason = "✨ 新着出品！"
-                elif remaining > 0 and (last_count <= 0 or last_count == -1):
-                    # 在庫が0以下から増えた場合
+                elif remaining > 0 and last_count <= 0:
                     should_notify = True
                     reason = "🔄 在庫復活！"
                 elif remaining <= 3 and last_count > 3:
@@ -119,7 +106,6 @@ def check_marche():
         except Exception as e:
             print(f"  -> {name}のチェック中にエラー: {e}")
 
-    # 全員のデータを保存
     with open(DB_FILE, "w") as f:
         json.dump(current_all_data, f)
 

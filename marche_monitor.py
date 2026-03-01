@@ -1,13 +1,14 @@
 import requests
-import os
 import json
-import re
+import os
+import time
+from datetime import datetime, timedelta
 
 # --- 設定 ---
-CHANNEL_ACCESS_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
+LINE_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 USER_ID = os.getenv('LINE_USER_ID')
-DB_FILE = "last_stock.json"
 
+# ChumToto ターゲットリスト（名前付き）
 TARGET_CREATORS = [
     {"name": "宮原梓", "id": "dst_miyaharaazu"},
     {"name": "江本夏渚", "id": "dst_emotonana"},
@@ -17,60 +18,103 @@ TARGET_CREATORS = [
     {"name": "ChumToto", "id": "chumtoto"},
 ]
 
-def send_line(text):
-    url = "https://api.line.me/v2/bot/message/push"
-    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}"}
-    payload = {"to": USER_ID, "messages": [{"type": "text", "text": text}]}
-    requests.post(url, headers=headers, json=payload)
+DB_FILE = "chum_last_inventory.json"
 
-def get_product_detail(cid, p_id):
-    """特定の商品ページを見に行って在庫数を正確に取る"""
-    url = f"https://marche-yell.com/{cid}/products/{p_id}"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"}
+def convert_to_jst_full(utc_str):
+    """UTCを日本時間(YYYY-MM-DD HH:MM)に変換"""
+    if not utc_str: return "0000-00-00 00:00"
     try:
-        res = requests.get(url, headers=headers, timeout=10)
-        json_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', res.text)
-        if json_match:
-            data = json.loads(json_match.group(1))
-            p = data.get('props', {}).get('pageProps', {}).get('product', {})
-            if p:
-                limit = p.get('limit_quantity', 0)
-                sold = p.get('sold_quantity', 0)
-                return p.get('title'), limit - sold, limit
+        dt_utc = datetime.strptime(utc_str, "%Y-%m-%dT%H:%M:%S.%f%z")
+        dt_jst = dt_utc + timedelta(hours=9)
+        return dt_jst.strftime("%Y-%m-%d %H:%M")
     except:
-        pass
-    return None, 0, 0
+        return "0000-00-00 00:00"
 
-def check_marche():
+def send_line(message):
+    if not LINE_TOKEN or not USER_ID: return
+    url = "https://api.line.me/v2/bot/message/push"
+    headers = {
+        "Content-Type": "application/json", 
+        "Authorization": f"Bearer {LINE_TOKEN}"
+    }
+    payload = {
+        "to": USER_ID, 
+        "messages": [{"type": "text", "text": message}]
+    }
+    try:
+        res = requests.post(url, headers=headers, json=payload)
+        res.raise_for_status()
+    except Exception as e:
+        print(f"LINE送信エラー: {e}")
+
+def main():
     last_data = {}
     if os.path.exists(DB_FILE):
-        with open(DB_FILE, "r") as f: last_data = json.load(f)
+        with open(DB_FILE, "r", encoding="utf-8") as f:
+            last_data = json.load(f)
 
-    headers = {"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1"}
-    current_all_data = {}
+    new_inventory_data = last_data.copy()
 
     for creator in TARGET_CREATORS:
-        cid = creator["id"]
-        print(f"チェック中: {creator['name']}...")
+        c_name = creator["name"]
+        c_id = creator["id"]
         
-        # 1. 一覧ページから「商品ID」の羅列だけを抜き出す（ここはブロックされにくい）
-        res = requests.get(f"https://marche-yell.com/{cid}", headers=headers)
-        # ID（数字6桁前後）をすべて見つける
-        found_ids = list(set(re.findall(r'/products/(\d+)', res.text)))
+        print(f"--- 監視中: {c_name} ({c_id}) ---")
+        list_api = f"https://api.marche-yell.com/api/public/products?creator_marche_id={c_id}&limit=100"
         
-        current_all_data[cid] = found_ids
-        old_ids = last_data.get(cid, [])
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "application/json",
+            "Origin": "https://marche-yell.com",
+            "Referer": f"https://marche-yell.com/{c_id}/"
+        }
 
-        # 2. 前回いなかった「新しいID」があれば、詳細ページへ中身を見に行く
-        for p_id in found_ids:
-            if p_id not in old_ids:
-                title, remaining, limit = get_product_detail(cid, p_id)
-                if title and remaining > 0:
-                    msg = f"\n✨【新着】{creator['name']}\n{title}\n在庫：残り {remaining} / 全 {limit} 枚\nhttps://marche-yell.com/{cid}/products/{p_id}"
+        try:
+            res = requests.get(list_api, headers=headers, timeout=15)
+            res.raise_for_status()
+            products = res.json().get('products', [])
+            
+            for p in products:
+                p_id = str(p.get('id'))
+                title = p.get('title', '不明')
+                start_jst = convert_to_jst_full(p.get('sales_start_at'))
+                
+                limit = p.get('limit_quantity', 0)
+                sold = p.get('sold_quantity', 0)
+                stock = limit - sold
+                
+                db_key = f"{c_id}_{p_id}"
+                
+                msg = ""
+                if db_key not in last_data:
+                    msg = (f"\n✨【新着】{c_name}\n{title}\n"
+                           f"開始: {start_jst}\n在庫: {stock}/{limit}\n"
+                           f"https://marche-yell.com/{c_id}/products/{p_id}")
+                elif stock > 0 and last_data[db_key].get('stock', 0) == 0:
+                    msg = (f"\n🔄【復活】{c_name}\n{title}\n"
+                           f"残り {stock}個！\n"
+                           f"https://marche-yell.com/{c_id}/products/{p_id}")
+                
+                if msg:
                     send_line(msg)
-                    print(f"  -> 新商品を検知: {title}")
+                    print(f"通知送信: {title}")
 
-    with open(DB_FILE, "w") as f: json.dump(current_all_data, f)
+                # JSON保存（ボットが「名前」でも検索できるようにnameを含める）
+                new_inventory_data[db_key] = {
+                    "name": c_name,
+                    "title": title, 
+                    "stock": stock, 
+                    "limit": limit,
+                    "start": start_jst,
+                    "creator_id": c_id
+                }
+
+        except Exception as e:
+            print(f"エラー ({c_name}): {e}")
+
+    with open(DB_FILE, "w", encoding="utf-8") as f:
+        json.dump(new_inventory_data, f, ensure_ascii=False, indent=2)
+    print(f"JSON更新完了: {DB_FILE}")
 
 if __name__ == "__main__":
-    check_marche()
+    main()

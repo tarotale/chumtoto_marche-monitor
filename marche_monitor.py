@@ -92,27 +92,45 @@ def main():
                 
                 db_key = f"{c_id}_{p_id}"
                 
+                # 現在の日本時間を取得
+                now_jst = datetime.now(timedelta(hours=9))
+                
+                # 商品の開始時間を比較用に変換
+                try:
+                    start_dt = datetime.strptime(start_jst, "%Y-%m-%d %H:%M")
+                    # 簡易的な比較のため、JSTの時間を生成
+                    is_future = start_dt > now_jst.replace(tzinfo=None)
+                except:
+                    is_future = False
+
                 msg = ""
-                # 1. 完全な新着（商品IDが初めて登場した時）
+                # 1. 完全な新着
                 if db_key not in last_data:
                     msg = (f"✨【新着】{c_name}\n"
                            f"📝 {title}\n"
                            f"📅 開始: {start_jst}\n"
-                           f"📦 在庫: {stock}/{limit}\n"
-                           f"🔗 https://marche-yell.com/{c_id}/products/{p_id}") # URLあり
+                           f"📦 在庫: {stock}/{limit}\n")
+                    
+                    if is_future:
+                        msg += f"🔗 https://marche-yell.com/{c_id}/products/{p_id}" # 未来ならURL
+                    else:
+                        msg += f"🆔 商品ID: {p_id}" # 過去ならID
 
-                # 2. 在庫復活（在庫0から増えた時）
+                # 2. 在庫復活
                 elif stock > 0 and last_data[db_key].get('stock', 0) == 0:
                     msg = (f"🔄【復活】{c_name}\n"
                            f"📝 {title}\n"
-                           f"📦 残り {stock}個！\n"
-                           f"🔗 https://marche-yell.com/{c_id}/products/{p_id}") # URLあり
+                           f"📦 残り {stock}個！\n")
+                    
+                    if is_future:
+                        msg += f"🔗 https://marche-yell.com/{c_id}/products/{p_id}"
+                    else:
+                        msg += f"🆔 商品ID: {p_id}"
 
                 # 通知送信
                 if msg:
                     send_line(msg)
-                    print(f"通知送信: {title}")
-
+                    print(f"通知送信: {title} (Future: {is_future})")
                 # JSON保存用のデータ更新（ここは常に最新にする）
                 new_inventory_data[db_key] = {
                     "name": c_name,

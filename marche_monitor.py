@@ -13,7 +13,7 @@ TARGET_CREATORS = [
     {"name": "柏葉れん", "id": "dst_kashiwabare", "nickname": "れん|れんちゃん|かし|カシ|ドム|ジオング|かしわば"},
     {"name": "瀬﨑くるみ", "id": "dst_sezakikurum", "nickname": "陶芸家|くるみん|せざき|せざくる|セザクル"},
     {"name": "詩之宮かこ", "id": "chum_shinomiyak", "nickname": "かこちゃん|かこちま|ちま|かこち|しのみや"},
-    {"name": "ChumToto", "id": "chumtoto", "nickname": "ちゃむとと|公式|ちゃむ|チャム|チャムトト"},
+    {"name": "ChumToto", "id": "chumtoto", "nickname": "ちゃむとと|公式|ちゃむ|チャムトト"},
 ]
 
 def convert_to_jst_full(utc_str):

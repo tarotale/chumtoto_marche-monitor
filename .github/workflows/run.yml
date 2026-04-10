@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '*/5 * * * *' # 5分おきに設定（前述の通り5分が最短推奨）
   workflow_dispatch: # 手動実行用
+  repository_dispatch: # ← これを追加
+    types: [line_trigger] # 好きな名前でOK
 
 jobs:
   check-stock:

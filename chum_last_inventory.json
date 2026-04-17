@@ -1098,7 +1098,7 @@
   "dst_miyaharaazu_162439": {
     "name": "宮原梓",
     "title": "【宮原梓】オンラインサイン会",
-    "stock": 20,
+    "stock": 4,
     "limit": 20,
     "start": "2026-04-17 21:00",
     "creator_id": "dst_miyaharaazu"
@@ -1106,7 +1106,7 @@
   "dst_emotonana_162441": {
     "name": "江本夏渚",
     "title": "【江本夏渚】オンラインサイン会",
-    "stock": 20,
+    "stock": 0,
     "limit": 20,
     "start": "2026-04-17 21:00",
     "creator_id": "dst_emotonana"
@@ -1114,7 +1114,7 @@
   "dst_kashiwabare_162437": {
     "name": "柏葉れん",
     "title": "【柏葉れん】オンラインサイン会",
-    "stock": 30,
+    "stock": 12,
     "limit": 30,
     "start": "2026-04-17 21:00",
     "creator_id": "dst_kashiwabare"
@@ -1122,7 +1122,7 @@
   "dst_sezakikurum_162438": {
     "name": "瀬﨑くるみ",
     "title": "【瀬﨑くるみ】オンラインサイン会",
-    "stock": 30,
+    "stock": 6,
     "limit": 30,
     "start": "2026-04-17 21:00",
     "creator_id": "dst_sezakikurum"
@@ -1130,7 +1130,7 @@
   "chum_shinomiyak_162440": {
     "name": "詩之宮かこ",
     "title": "【詩之宮かこ】オンラインサイン会",
-    "stock": 30,
+    "stock": 0,
     "limit": 30,
     "start": "2026-04-17 21:00",
     "creator_id": "chum_shinomiyak"

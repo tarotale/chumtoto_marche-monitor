@@ -9,7 +9,6 @@ import time
 LINE_TOKEN = os.getenv('LINE_ACCESS_TOKEN')
 DB_FILE = "chum_last_inventory.json"
 
-# メンバー情報（ニックネーム・カラー・ID）
 TARGET_CREATORS = [
     {"name": "宮原梓", "id": "dst_miyaharaazu", "emoji": "🤍", "nickname": "ずに|あずさ|梓|あずにゃん|あずにゃ|みゃずさ|みやはら"},
     {"name": "江本夏渚", "id": "dst_emotonana", "emoji": "❤️", "nickname": "えもと|なな|ななちゃん|えもなな|エモ\(となな\)|江本|エモ"},
@@ -18,16 +17,6 @@ TARGET_CREATORS = [
     {"name": "詩之宮かこ", "id": "chum_shinomiyak", "emoji": "💛", "nickname": "かこちゃん|かこちま|ちま|かこち|しのみや"},
     {"name": "ChumToto", "id": "chumtoto", "emoji": "🍭", "nickname": "公式|チャムトト"},
 ]
-
-def find_creator_by_nickname(text):
-    """
-    入力されたテキストからニックネームを照合してメンバー情報を返す
-    (Webhook応答機能の実装時に使用可能)
-    """
-    for creator in TARGET_CREATORS:
-        if re.search(creator["nickname"], text):
-            return creator
-    return None
 
 def convert_to_jst_full(utc_str):
     if not utc_str: return "0000-00-00 00:00"
@@ -39,9 +28,6 @@ def convert_to_jst_full(utc_str):
         return "0000-00-00 00:00"
 
 def send_line(message):
-    """
-    LINE Messaging APIを使用してメッセージを配信
-    """
     if not LINE_TOKEN:
         print("Error: LINE_ACCESS_TOKEN is not set.")
         return
@@ -56,77 +42,66 @@ def send_line(message):
 
 def main():
     last_data = {}
-    # 既存データの読み込み
     if os.path.exists(DB_FILE):
         with open(DB_FILE, "r", encoding="utf-8") as f:
-            try:
-                last_data = json.load(f)
-            except:
-                last_data = {}
+            try: last_data = json.load(f)
+            except: last_data = {}
 
     current_all_data = last_data.copy()
+    update_list = []  # 新着・復活した商品を溜めるリスト
 
     for creator in TARGET_CREATORS:
-        c_name = creator["name"]
-        c_id = creator["id"]
-        c_emoji = creator["emoji"]
-        
-        # メンバーごとに全件取得（ページネーション対応）
+        c_name, c_id, c_emoji = creator["name"], creator["id"], creator["emoji"]
         offset = 0
         while True:
             list_api = f"https://api.marche-yell.com/api/public/products?creator_marche_id={c_id}&limit=100&offset={offset}"
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
-            
+            headers = {"User-Agent": "Mozilla/5.0"}
             try:
                 res = requests.get(list_api, headers=headers, timeout=15)
-                res.raise_for_status()
                 products = res.json().get('products', [])
-                
-                if not products:
-                    break
+                if not products: break
                 
                 for p in products:
                     p_id = str(p.get('id'))
                     title = p.get('title', '不明')
                     start_jst = convert_to_jst_full(p.get('sales_start_at'))
                     limit = p.get('limit_quantity', 0)
-                    sold = p.get('sold_quantity', 0)
-                    stock = limit - sold
+                    stock = limit - p.get('sold_quantity', 0)
                     db_key = f"{c_id}_{p_id}"
                     
-                    msg = ""
-                    # 新着検知
+                    # 検知ロジック
+                    status_prefix = ""
                     if db_key not in last_data:
-                        msg = f"🍭【ChumToto/新着】{c_emoji}{c_name}\n📝 {title}\n📅 開始: {start_jst}\n📦 在庫: {stock}/{limit}\n🔗 https://marche-yell.com/{c_id}/products/{p_id}"
-                    # 復活検知（在庫が0から復活した場合）
+                        status_prefix = "🍭【新着】"
                     elif stock > 0 and last_data[db_key].get('stock', 0) == 0:
-                        msg = f"🔄【ChumToto/復活】{c_emoji}{c_name}\n📝 {title}\n📦 残り {stock}個！\n🔗 https://marche-yell.com/{c_id}/products/{p_id}"
+                        status_prefix = "🔄【復活】"
                     
-                    if msg:
-                        send_line(msg)
+                    if status_prefix:
+                        update_list.append({
+                            "msg": f"{status_prefix}{c_emoji}{c_name}\n📝 {title}\n📅 開始: {start_jst}\n📦 在庫: {stock}/{limit}\n🔗 https://marche-yell.com/{c_id}/products/{p_id}",
+                            "start": start_jst # ソート用
+                        })
 
-                    # データベース更新用の辞書
-                    current_all_data[db_key] = {
-                        "name": c_name,
-                        "title": title, 
-                        "stock": stock, 
-                        "limit": limit,
-                        "start": start_jst,
-                        "creator_id": c_id
-                    }
+                    current_all_data[db_key] = {"name": c_name, "title": title, "stock": stock, "limit": limit, "start": start_jst, "creator_id": c_id}
                 
-                # 100件未満なら終了
-                if len(products) < 100:
-                    break
-                
+                if len(products) < 100: break
                 offset += 100
-                time.sleep(1) # API負荷軽減
-                
+                time.sleep(1)
             except Exception as e:
                 print(f"Error ({c_name}): {e}")
                 break
 
-    # 最終データをファイルに保存
+    # --- ソートと送信 ---
+    if update_list:
+        # 販売開始日(start)で降順ソート（新しい順）
+        update_list.sort(key=lambda x: x['start'], reverse=True)
+        
+        # 最新10件を抽出して結合
+        top_10 = update_list[:10]
+        final_msg = "🌟 ChumToto マルシェ更新情報 🌟\n\n" + "\n\n---\n\n".join([item['msg'] for item in top_10])
+        
+        send_line(final_msg)
+
     with open(DB_FILE, "w", encoding="utf-8") as f:
         json.dump(current_all_data, f, ensure_ascii=False, indent=2)
 

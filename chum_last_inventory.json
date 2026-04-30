@@ -1154,7 +1154,7 @@
   "dst_kashiwabare_163841": {
     "name": "柏葉れん",
     "title": "【柏葉れん】「POPPŸ」マルシェ",
-    "stock": 15,
+    "stock": 0,
     "limit": 15,
     "start": "2026-04-30 21:00",
     "creator_id": "dst_kashiwabare"
@@ -1162,7 +1162,7 @@
   "chum_shinomiyak_163839": {
     "name": "詩之宮かこ",
     "title": "【詩之宮かこ】「POPPŸ」マルシェ",
-    "stock": 20,
+    "stock": 0,
     "limit": 20,
     "start": "2026-04-30 21:00",
     "creator_id": "chum_shinomiyak"
@@ -1170,7 +1170,7 @@
   "dst_miyaharaazu_163867": {
     "name": "宮原梓",
     "title": "【宮原梓】「POPPŸ」マルシェ",
-    "stock": 30,
+    "stock": 5,
     "limit": 30,
     "start": "2026-04-30 21:00",
     "creator_id": "dst_miyaharaazu"
@@ -1178,7 +1178,7 @@
   "dst_emotonana_163911": {
     "name": "江本夏渚",
     "title": "【江本夏渚】「POPPŸ」マルシェ",
-    "stock": 5,
+    "stock": 0,
     "limit": 5,
     "start": "2026-04-30 21:00",
     "creator_id": "dst_emotonana"
@@ -1186,7 +1186,7 @@
   "dst_sezakikurum_163915": {
     "name": "瀬﨑くるみ",
     "title": "【瀬﨑くるみ】「POPPŸ」マルシェ",
-    "stock": 7,
+    "stock": 0,
     "limit": 7,
     "start": "2026-04-30 21:00",
     "creator_id": "dst_sezakikurum"

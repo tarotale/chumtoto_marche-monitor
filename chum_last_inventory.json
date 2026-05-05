@@ -1190,5 +1190,13 @@
     "limit": 7,
     "start": "2026-04-30 21:00",
     "creator_id": "dst_sezakikurum"
+  },
+  "dst_emotonana_164529": {
+    "name": "江本夏渚",
+    "title": "【江本夏渚】卒業マルシェ",
+    "stock": 50,
+    "limit": 50,
+    "start": "2026-05-06 21:30",
+    "creator_id": "dst_emotonana"
   }
 }

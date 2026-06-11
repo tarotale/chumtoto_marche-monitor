@@ -1230,5 +1230,61 @@
     "limit": 25,
     "start": "2026-05-23 12:30",
     "creator_id": "chum_shinomiyak"
+  },
+  "chumtoto_168077": {
+    "name": "ChumToto",
+    "title": ".yell magazine撮り下ろし　　柏葉れん　あなたのお名前、サイン、一言メッセージ　1,500円",
+    "stock": 0,
+    "limit": 10,
+    "start": "2026-06-11 19:00",
+    "creator_id": "chumtoto"
+  },
+  "chumtoto_168078": {
+    "name": "ChumToto",
+    "title": ".yell magazine撮り下ろし　　詩之宮かこ　あなたのお名前、サイン、一言メッセージ　1,500円",
+    "stock": 0,
+    "limit": 10,
+    "start": "2026-06-11 19:00",
+    "creator_id": "chumtoto"
+  },
+  "chumtoto_168080": {
+    "name": "ChumToto",
+    "title": ".yell magazine撮り下ろし　　瀬﨑くるみ　あなたのお名前、サイン、一言メッセージ　1,500円",
+    "stock": 0,
+    "limit": 10,
+    "start": "2026-06-11 19:00",
+    "creator_id": "chumtoto"
+  },
+  "chumtoto_168081": {
+    "name": "ChumToto",
+    "title": ".yell magazine撮り下ろし　　宮原梓　あなたのお名前、サイン、一言メッセージ　1,500円",
+    "stock": 0,
+    "limit": 10,
+    "start": "2026-06-11 19:00",
+    "creator_id": "chumtoto"
+  },
+  "chumtoto_168083": {
+    "name": "ChumToto",
+    "title": ".yell magazine撮り下ろし　　2人のサイン、一言コメント入り２shot写真（詩之宮かこ&柏葉れん）　　2,000円",
+    "stock": 0,
+    "limit": 0,
+    "start": "2026-06-11 19:00",
+    "creator_id": "chumtoto"
+  },
+  "chumtoto_168084": {
+    "name": "ChumToto",
+    "title": ".yell magazine撮り下ろし　　2人のサイン、一言コメント入り２shot写真（瀬﨑くるみ&宮原梓）　　　2,000円",
+    "stock": -1,
+    "limit": 0,
+    "start": "2026-06-11 19:00",
+    "creator_id": "chumtoto"
+  },
+  "chumtoto_168086": {
+    "name": "ChumToto",
+    "title": ".yell magazine撮り下ろし　全員サイン、全員一言メッセージ入り全員集合写真　　　　　2,000円",
+    "stock": 0,
+    "limit": 0,
+    "start": "2026-06-11 19:01",
+    "creator_id": "chumtoto"
   }
 }

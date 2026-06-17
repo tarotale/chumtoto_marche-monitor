@@ -1286,5 +1286,37 @@
     "limit": 0,
     "start": "2026-06-11 19:01",
     "creator_id": "chumtoto"
+  },
+  "dst_miyaharaazu_168652": {
+    "name": "宮原梓",
+    "title": "【宮原梓】オンラインサイン会",
+    "stock": 40,
+    "limit": 40,
+    "start": "2026-06-18 21:30",
+    "creator_id": "dst_miyaharaazu"
+  },
+  "dst_kashiwabare_168650": {
+    "name": "柏葉れん",
+    "title": "【柏葉れん】オンラインサイン会",
+    "stock": 40,
+    "limit": 40,
+    "start": "2026-06-18 21:30",
+    "creator_id": "dst_kashiwabare"
+  },
+  "dst_sezakikurum_168651": {
+    "name": "瀬﨑くるみ",
+    "title": "【瀬﨑くるみ】オンラインサイン会",
+    "stock": 40,
+    "limit": 40,
+    "start": "2026-06-18 21:30",
+    "creator_id": "dst_sezakikurum"
+  },
+  "chum_shinomiyak_168653": {
+    "name": "詩之宮かこ",
+    "title": "【詩之宮かこ】オンラインサイン会",
+    "stock": 40,
+    "limit": 40,
+    "start": "2026-06-18 21:30",
+    "creator_id": "chum_shinomiyak"
   }
 }

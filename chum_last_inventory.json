@@ -1330,7 +1330,7 @@
   "dst_kashiwabare_170798": {
     "name": "柏葉れん",
     "title": "【柏葉れん】オンラインサイン会",
-    "stock": 21,
+    "stock": 20,
     "limit": 40,
     "start": "2026-07-09 21:00",
     "creator_id": "dst_kashiwabare"
@@ -1338,7 +1338,7 @@
   "dst_sezakikurum_170799": {
     "name": "瀬﨑くるみ",
     "title": "【瀬﨑くるみ】オンラインサイン会",
-    "stock": 17,
+    "stock": 13,
     "limit": 50,
     "start": "2026-07-09 21:00",
     "creator_id": "dst_sezakikurum"
@@ -1346,7 +1346,7 @@
   "chum_shinomiyak_170803": {
     "name": "詩之宮かこ",
     "title": "【詩之宮かこ】オンラインサイン会",
-    "stock": 18,
+    "stock": 17,
     "limit": 50,
     "start": "2026-07-09 21:00",
     "creator_id": "chum_shinomiyak"

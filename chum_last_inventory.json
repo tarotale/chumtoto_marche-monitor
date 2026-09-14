@@ -1470,5 +1470,13 @@
     "limit": 2,
     "start": "2026-08-31 20:15",
     "creator_id": "chum_shinomiyak"
+  },
+  "dst_kashiwabare_178160": {
+    "name": "柏葉れん",
+    "title": "【柏葉れん】生誕記念ライブコマース",
+    "stock": 40,
+    "limit": 40,
+    "start": "2026-09-16 20:45",
+    "creator_id": "dst_kashiwabare"
   }
 }

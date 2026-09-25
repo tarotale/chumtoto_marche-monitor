@@ -1478,5 +1478,53 @@
     "limit": 40,
     "start": "2026-09-16 20:45",
     "creator_id": "dst_kashiwabare"
+  },
+  "dst_miyaharaazu_179297": {
+    "name": "宮原梓",
+    "title": "【宮原梓】9月マルシェ",
+    "stock": 20,
+    "limit": 20,
+    "start": "2026-09-27 21:00",
+    "creator_id": "dst_miyaharaazu"
+  },
+  "dst_miyaharaazu_179298": {
+    "name": "宮原梓",
+    "title": "【宮原梓】初めてのボイスマルシェ♡",
+    "stock": 15,
+    "limit": 15,
+    "start": "2026-09-27 21:05",
+    "creator_id": "dst_miyaharaazu"
+  },
+  "dst_kashiwabare_179293": {
+    "name": "柏葉れん",
+    "title": "【柏葉れん】9月マルシェ",
+    "stock": 15,
+    "limit": 15,
+    "start": "2026-09-27 21:00",
+    "creator_id": "dst_kashiwabare"
+  },
+  "dst_sezakikurum_179294": {
+    "name": "瀬﨑くるみ",
+    "title": "【瀬﨑くるみ】9月マルシェ",
+    "stock": 30,
+    "limit": 30,
+    "start": "2026-09-27 21:00",
+    "creator_id": "dst_sezakikurum"
+  },
+  "chum_shinomiyak_179295": {
+    "name": "詩之宮かこ",
+    "title": "【詩之宮かこ】9月マルシェ",
+    "stock": 15,
+    "limit": 15,
+    "start": "2026-09-27 21:00",
+    "creator_id": "chum_shinomiyak"
+  },
+  "chum_shinomiyak_179296": {
+    "name": "詩之宮かこ",
+    "title": "ねむにゃんぼいまる(詩之宮かこ ボイスマルシェ)",
+    "stock": 15,
+    "limit": 15,
+    "start": "2026-09-27 21:05",
+    "creator_id": "chum_shinomiyak"
   }
 }

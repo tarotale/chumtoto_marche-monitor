@@ -1530,7 +1530,7 @@
   "dst_miyaharaazu_179754": {
     "name": "宮原梓",
     "title": "【宮原梓】9月マルシェ(追加販売)",
-    "stock": 10,
+    "stock": 0,
     "limit": 10,
     "start": "2026-10-01 21:00",
     "creator_id": "dst_miyaharaazu"
@@ -1538,7 +1538,7 @@
   "dst_miyaharaazu_179793": {
     "name": "宮原梓",
     "title": "【宮原梓】初めてのボイスマルシェ♡(追加販売)",
-    "stock": 10,
+    "stock": 0,
     "limit": 10,
     "start": "2026-10-01 21:05",
     "creator_id": "dst_miyaharaazu"
@@ -1546,7 +1546,7 @@
   "chum_shinomiyak_179798": {
     "name": "詩之宮かこ",
     "title": "【詩之宮かこ】9月マルシェ(追加販売)",
-    "stock": 5,
+    "stock": 0,
     "limit": 5,
     "start": "2026-10-01 21:00",
     "creator_id": "chum_shinomiyak"
